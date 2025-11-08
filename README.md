@@ -18,5 +18,3 @@ The system evaluates model performance on a labeled dataset and anonymizes detec
 - 🧮 Research-ready logs using Loguru  
 
 ---
-
-## 🧱 Folder Structure
