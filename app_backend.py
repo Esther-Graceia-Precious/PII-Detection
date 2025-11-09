@@ -210,7 +210,7 @@ def evaluate_models_on_dataset(
 
     model_results = {model: {e: [] for e in entity_types} for model in ["Regex", "spaCy", "BERT", "Presidio"]}
 
-    for _, row in df.head(50).iterrows():
+    for _, row in df.iterrows():
         text = str(row["text"])
         ground_truth = {e: str(row.get(e.lower(), "")).strip() != "" for e in entity_types}
 
@@ -284,7 +284,7 @@ def evaluate_models_on_dataset(
 
     masked_examples = []
     for text in df.head(1)["text"]:
-        
+
         analyzed = analyzer.analyze(text=text, language="en")
         masked = anonymizer.anonymize(text=text, analyzer_results=analyzed)
         masked_examples.append({"original": text, "masked": masked.text})

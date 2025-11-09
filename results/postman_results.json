@@ -4,177 +4,177 @@
         "Regex": {
             "NAME": {
                 "precision": 1.0,
-                "recall": 1.0,
-                "f1": 1.0,
-                "accuracy": 1.0,
-                "support": 50
+                "recall": 0.99,
+                "f1": 0.995,
+                "accuracy": 0.99,
+                "support": 4434
             },
             "EMAIL": {
                 "precision": 1.0,
-                "recall": 0.92,
-                "f1": 0.958,
-                "accuracy": 0.92,
-                "support": 50
+                "recall": 0.898,
+                "f1": 0.946,
+                "accuracy": 0.898,
+                "support": 4434
             },
             "PHONE": {
                 "precision": 1.0,
-                "recall": 0.72,
-                "f1": 0.837,
-                "accuracy": 0.72,
-                "support": 50
+                "recall": 0.543,
+                "f1": 0.704,
+                "accuracy": 0.543,
+                "support": 4434
             },
             "ADDRESS": {
                 "precision": 1.0,
-                "recall": 0.44,
-                "f1": 0.611,
-                "accuracy": 0.44,
-                "support": 50
+                "recall": 0.394,
+                "f1": 0.565,
+                "accuracy": 0.394,
+                "support": 4434
             },
             "JOB": {
                 "precision": 1.0,
                 "recall": 0.92,
-                "f1": 0.958,
+                "f1": 0.959,
                 "accuracy": 0.92,
-                "support": 50
+                "support": 4434
             },
             "HOBBY": {
                 "precision": 1.0,
-                "recall": 0.52,
-                "f1": 0.684,
-                "accuracy": 0.52,
-                "support": 50
+                "recall": 0.445,
+                "f1": 0.616,
+                "accuracy": 0.445,
+                "support": 4434
             }
         },
         "spaCy": {
             "NAME": {
                 "precision": 1.0,
-                "recall": 0.92,
-                "f1": 0.958,
-                "accuracy": 0.92,
-                "support": 50
+                "recall": 0.933,
+                "f1": 0.965,
+                "accuracy": 0.933,
+                "support": 4434
             },
             "EMAIL": {
                 "precision": 1.0,
-                "recall": 0.92,
-                "f1": 0.958,
-                "accuracy": 0.92,
-                "support": 50
+                "recall": 0.898,
+                "f1": 0.946,
+                "accuracy": 0.898,
+                "support": 4434
             },
             "PHONE": {
-                "precision": 0.0,
+                "precision": 1.0,
                 "recall": 0.0,
                 "f1": 0.0,
                 "accuracy": 0.0,
-                "support": 50
+                "support": 4434
             },
             "ADDRESS": {
                 "precision": 1.0,
-                "recall": 0.28,
+                "recall": 0.281,
                 "f1": 0.438,
-                "accuracy": 0.28,
-                "support": 50
+                "accuracy": 0.281,
+                "support": 4434
             },
             "JOB": {
                 "precision": 1.0,
-                "recall": 0.42,
-                "f1": 0.592,
-                "accuracy": 0.42,
-                "support": 50
+                "recall": 0.409,
+                "f1": 0.581,
+                "accuracy": 0.409,
+                "support": 4434
             },
             "HOBBY": {
                 "precision": 0.0,
                 "recall": 0.0,
                 "f1": 0.0,
                 "accuracy": 0.0,
-                "support": 50
+                "support": 4434
             }
         },
         "BERT": {
             "NAME": {
                 "precision": 1.0,
-                "recall": 1.0,
-                "f1": 1.0,
-                "accuracy": 1.0,
-                "support": 50
+                "recall": 0.994,
+                "f1": 0.997,
+                "accuracy": 0.994,
+                "support": 4434
             },
             "EMAIL": {
                 "precision": 1.0,
-                "recall": 0.92,
-                "f1": 0.958,
-                "accuracy": 0.92,
-                "support": 50
+                "recall": 0.898,
+                "f1": 0.946,
+                "accuracy": 0.898,
+                "support": 4434
             },
             "PHONE": {
                 "precision": 1.0,
-                "recall": 0.72,
-                "f1": 0.837,
-                "accuracy": 0.72,
-                "support": 50
+                "recall": 0.543,
+                "f1": 0.704,
+                "accuracy": 0.543,
+                "support": 4434
             },
             "ADDRESS": {
                 "precision": 1.0,
-                "recall": 0.78,
-                "f1": 0.876,
-                "accuracy": 0.78,
-                "support": 50
+                "recall": 0.709,
+                "f1": 0.83,
+                "accuracy": 0.709,
+                "support": 4434
             },
             "JOB": {
                 "precision": 1.0,
-                "recall": 0.94,
-                "f1": 0.969,
-                "accuracy": 0.94,
-                "support": 50
+                "recall": 0.944,
+                "f1": 0.971,
+                "accuracy": 0.944,
+                "support": 4434
             },
             "HOBBY": {
                 "precision": 1.0,
-                "recall": 0.52,
-                "f1": 0.684,
-                "accuracy": 0.52,
-                "support": 50
+                "recall": 0.445,
+                "f1": 0.616,
+                "accuracy": 0.445,
+                "support": 4434
             }
         },
         "Presidio": {
             "NAME": {
                 "precision": 1.0,
-                "recall": 0.98,
-                "f1": 0.99,
-                "accuracy": 0.98,
-                "support": 50
+                "recall": 0.948,
+                "f1": 0.973,
+                "accuracy": 0.948,
+                "support": 4434
             },
             "EMAIL": {
                 "precision": 1.0,
-                "recall": 0.92,
-                "f1": 0.958,
-                "accuracy": 0.92,
-                "support": 50
+                "recall": 0.898,
+                "f1": 0.946,
+                "accuracy": 0.898,
+                "support": 4434
             },
             "PHONE": {
                 "precision": 1.0,
-                "recall": 0.56,
-                "f1": 0.718,
-                "accuracy": 0.56,
-                "support": 50
+                "recall": 0.41,
+                "f1": 0.581,
+                "accuracy": 0.41,
+                "support": 4434
             },
             "ADDRESS": {
                 "precision": 1.0,
-                "recall": 0.66,
-                "f1": 0.795,
-                "accuracy": 0.66,
-                "support": 50
+                "recall": 0.64,
+                "f1": 0.78,
+                "accuracy": 0.64,
+                "support": 4434
             },
             "JOB": {
                 "precision": 1.0,
                 "recall": 0.92,
-                "f1": 0.958,
+                "f1": 0.959,
                 "accuracy": 0.92,
-                "support": 50
+                "support": 4434
             },
             "HOBBY": {
                 "precision": 1.0,
-                "recall": 0.56,
-                "f1": 0.718,
-                "accuracy": 0.56,
-                "support": 50
+                "recall": 0.492,
+                "f1": 0.66,
+                "accuracy": 0.492,
+                "support": 4434
             }
         }
     }
