@@ -1,0 +1,36 @@
+# ==========================
+# PYTHON CACHE / TEMP FILES
+# ==========================
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.ipynb_checkpoints/
+
+# ==========================
+# ENVIRONMENT / LOGS
+# ==========================
+.env
+*.log
+
+# ==========================
+# DATASETS (Private or Large)
+# ==========================
+data/
+!data/README.md    # (if you want to explain your data format)
+
+# ==========================
+# RESULTS - Only Keep Plots
+# ==========================
+results/pii_masked.csv
+results/postman_results.json
+results/*.csv
+!results/plots/
+!results/plots/*.png
+!results/plots/pii_model_summary.csv
+
+# ==========================
+# OTHER
+# ==========================
+*.json
+*.zip
