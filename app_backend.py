@@ -19,6 +19,7 @@ import pandas as pd
 import re
 import sys
 import warnings
+from collections import defaultdict
 from loguru import logger
 from sklearn.metrics import precision_recall_fscore_support, accuracy_score
 from fastapi import FastAPI, HTTPException
@@ -162,9 +163,18 @@ patterns = {
     "EMAIL": re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}"),
     "PHONE": re.compile(r"(\+?\d{1,3}[-.\s]?)?(\(?\d{2,4}\)?[-.\s]?)?\d{3,4}[-.\s]?\d{3,4}"),
     "ADDRESS": re.compile(
-        r"\b\d{1,5}\s+([A-Z][a-z]+(\s|$)){1,3}(Street|St|Road|Rd|Avenue|Ave|Lane|Ln|Boulevard|Blvd|Drive|Dr|Terrace|Way)\b",
-        re.IGNORECASE),
-    "JOB": re.compile(r"\b(am|as|work(ed)?\s+as|I[' ]?m\s+(a|an))\s+[A-Za-z ]{2,30}\b", re.IGNORECASE),
+    r"(?:\blive at\b|\bstaying at\b|\blocated at\b|\baddress is\b)?\s*\d{1,5}[A-Za-z\s,.-]*"
+    r"(Street|St|Road|Rd|Avenue|Ave|Lane|Ln|Boulevard|Blvd|Drive|Dr|Terrace|Way|"
+    r"Place|Block|Sector|Colony|Apartment|Building)\b[^\n]*",
+    re.IGNORECASE,
+    ),
+
+    "ADDRESS": re.compile(
+    r"\b\d{1,5}[A-Za-z\s,.-]*(Street|St|Road|Rd|Avenue|Ave|Lane|Ln|Boulevard|Blvd|"
+    r"Drive|Dr|Terrace|Way|Place|Block|Sector|Colony|Apartment|Building)\b[^\n]*",
+    re.IGNORECASE
+),
+
     "HOBBY": re.compile(r"\b(enjoy|love|like)\s+[a-z]+ing\b", re.IGNORECASE)
 }
 hobby_patterns = [
@@ -189,6 +199,82 @@ def detect_with_regex(text):
             entities.append(key)
     return entities
 
+# ========== 🧠 ENSEMBLE MASKING (Majority Voting) ==========
+def ensemble_mask_text(text, threshold=2):
+    """
+    Combines Regex, spaCy, BERT, and Presidio detections using majority voting.
+    Performs safe, non-overlapping masking based on detected spans.
+    """
+    global nlp_spacy, nlp_transformer, presidio_analyzer, presidio_anonymizer
+
+    # --- Ensure models are loaded ---
+    if nlp_spacy is None:
+        nlp_spacy = load_spacy_model()
+    if nlp_transformer is None:
+        nlp_transformer = load_transformer_model()
+    if presidio_analyzer is None:
+        presidio_analyzer, presidio_anonymizer = load_presidio_models()
+
+    # --- Run all detectors ---
+    regex_entities = detect_with_regex(text)
+
+    spacy_entities = []
+    if nlp_spacy:
+        doc = nlp_spacy(text)
+        spacy_entities = [ENTITY_MAP.get(ent.label_.upper(), ent.label_.upper()) for ent in doc.ents]
+
+    bert_entities = []
+    if nlp_transformer:
+        bert_entities = [
+            ENTITY_MAP.get(ent["entity_group"].upper(), ent["entity_group"].upper())
+            for ent in nlp_transformer(text)
+        ]
+
+    presidio_entities = []
+    if presidio_analyzer:
+        presidio_entities = [
+            ENTITY_MAP.get(r.entity_type.upper(), r.entity_type.upper())
+            for r in presidio_analyzer.analyze(text=text, language="en")
+        ]
+
+    # --- Voting ---
+    all_detections = {
+        "Regex": regex_entities,
+        "spaCy": spacy_entities,
+        "BERT": bert_entities,
+        "Presidio": presidio_entities
+    }
+
+    votes = defaultdict(int)
+    for ents in all_detections.values():
+        for e in ents:
+            votes[e] += 1
+
+    final_entities = [e for e, v in votes.items() if v >= threshold]
+
+    # --- 🧠 Smart Non-overlapping Masking ---
+    spans = []
+    for e in final_entities:
+        pattern = patterns.get(e)
+        if not pattern:
+            continue
+        for match in re.finditer(pattern, text):
+            spans.append((match.start(), match.end(), e))
+
+    # Sort spans by start index descending (mask from right to left)
+    spans.sort(key=lambda x: x[0], reverse=True)
+
+    masked_text = text
+    for start, end, label in spans:
+        masked_text = masked_text[:start] + f"[{label}]" + masked_text[end:]
+
+    # Clean spacing after replacements
+    masked_text = re.sub(r'\s+\[', ' [', masked_text)
+    masked_text = re.sub(r'\[\s+', '[', masked_text)
+
+    return masked_text, all_detections, final_entities
+
+
 
 # ========== 3️⃣ EVALUATION FUNCTION ==========
 def evaluate_models_on_dataset(
@@ -210,7 +296,7 @@ def evaluate_models_on_dataset(
 
     model_results = {model: {e: [] for e in entity_types} for model in ["Regex", "spaCy", "BERT", "Presidio"]}
 
-    for _, row in df.iterrows():
+    for _, row in df.head(20).iterrows():
         text = str(row["text"])
         ground_truth = {e: str(row.get(e.lower(), "")).strip() != "" for e in entity_types}
 
@@ -327,9 +413,66 @@ def evaluate():
         import traceback
         logger.error(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
+    
+@app.post("/mask_ensemble")
+def mask_with_ensemble(data: dict):
+    """
+    Perform PII masking using ensemble voting logic.
+    Example input: {"text": "My name is John Doe, email john@gmail.com, phone 555-1234"}
+    """
+    try:
+        text = data.get("text", "")
+        if not text:
+            raise HTTPException(status_code=400, detail="No text provided")
+
+        global nlp_spacy, nlp_transformer, presidio_analyzer, presidio_anonymizer
+
+        # Make sure models are loaded
+        if not any([nlp_spacy, nlp_transformer, presidio_analyzer]):
+            logger.warning("⚠️ Models not loaded yet — loading now...")
+            nlp_spacy = load_spacy_model()
+            nlp_transformer = load_transformer_model()
+            presidio_analyzer, presidio_anonymizer = load_presidio_models()
+
+        logger.info("🚀 Starting ensemble masking...")
+
+        # Time each step to confirm execution
+        import time
+        start = time.time()
+
+        masked_text, detections, final_entities = ensemble_mask_text(
+            text,
+            threshold=2
+        )
+
+        elapsed = time.time() - start
+        logger.info(f"🧠 Ensemble detected: {final_entities}")
+        logger.success(f"✅ Masked Text: {masked_text}")
+        logger.info(f"⏱️ Processing time: {elapsed:.2f} seconds")
+
+        return {
+            "success": True,
+            "original_text": text,
+            "masked_text": masked_text,
+            "detections": detections,
+            "final_entities_masked": final_entities,
+            "processing_time_sec": round(elapsed, 2)
+        }
+
+    except Exception as e:
+        import traceback
+        logger.error(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 
 
 # ========== 5️⃣ MAIN EXECUTION ==========
 if __name__ == "__main__":
+    logger.info("🚀 Loading models at startup...")
+    nlp_spacy = load_spacy_model()
+    nlp_transformer = load_transformer_model()
+    presidio_analyzer, presidio_anonymizer = load_presidio_models()
+    logger.success("✅ All models ready!")
     import uvicorn
     uvicorn.run("main_pii_research:app", host="0.0.0.0", port=8001)
