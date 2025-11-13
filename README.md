@@ -1,28 +1,47 @@
-# PII Detection and Masking Research (Python + FastAPI)
+# 🔐 PII Detection and Masking Research (Python + FastAPI)
 
-This project compares multiple **pre-trained models** for detecting Personally Identifiable Information (PII) in text, using:
-- **Regex patterns**
-- **spaCy NER**
-- **BERT (dslim/bert-base-NER)**
-- **Microsoft Presidio**
+This project implements a multi-approach system for detecting and masking Personally Identifiable Information (PII) from unstructured text.
+It combines **rule-based**, **statistical**, and **transformer-based** methods to improve detection accuracy and consistency.
 
-The system evaluates model performance on a labeled dataset and anonymizes detected PII fields.
+The following approaches are used:
+* **Regex-based pattern matching** (rule-based extraction, not a model)
+* **spaCy NER** (en_core_web_sm) with custom EntityRuler patterns
+* **BERT (dslim/bert-base-NER)** transformer-based NER
+* **Microsoft Presidio** (Analyzer + Anonymizer)
+
+These detectors are integrated using an **ensemble majority-voting pipeline**, and final anonymization is performed using **Microsoft Presidio**.
 
 ---
 
 ## Features
-- Multi-model PII detection pipeline  
-- Entity-level evaluation (precision, recall, F1, accuracy)  
-- Masked output generation using Microsoft Presidio  
-- FastAPI backend for evaluation  
-- Research-ready logs using Loguru  
+
+* **Multi-approach PII detection pipeline**
+* **Entity-level evaluation** (Precision, Recall, F1-score, Accuracy)
+* **Ensemble voting mechanism** for robust PII identification
+* **Masked output generation** using placeholders:
+
+  * `[NAME]`
+  * `[EMAIL]`
+  * `[PHONE]`
+  * `[ADDRESS]`
+  * `[JOB]`
+  * `[HOBBY]`
+* **FastAPI backend** for evaluation & real-time masking
+* **Loguru logging** for research-grade tracking and debugging
 
 ---
 
 # Data Folder
-This folder contains the datasets used for PII detection evaluation.
 
-- `raw_pii_dataset.csv`: Unprocessed input data (synthetic or collected text samples)
-- `pii_dataset.csv`: Cleaned dataset used for model evaluation
+This folder contains the datasets used for PII detection evaluation:
+* **raw_pii_dataset.csv**
+  Unprocessed input data (synthetic or collected text samples)
+* **pii_dataset.csv**
+  Cleaned and structured dataset used for model benchmarking
+  
+*Note: These datasets are not included in the repository due to privacy, licensing, and size constraints.*
 
-Note: These files are excluded from the repository for privacy and size reasons.
+Dataset reference:
+[https://www.kaggle.com/datasets/alejopaullier/pii-external-dataset](https://www.kaggle.com/datasets/alejopaullier/pii-external-dataset)
+
+---
