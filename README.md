@@ -1,4 +1,4 @@
-# 🔐 PII Detection and Masking Research (Python + FastAPI)
+# PII Detection and Masking Research (Python + FastAPI)
 
 This project implements a multi-approach system for detecting and masking Personally Identifiable Information (PII) from unstructured text.
 It combines **rule-based**, **statistical**, and **transformer-based** methods to improve detection accuracy and consistency.
