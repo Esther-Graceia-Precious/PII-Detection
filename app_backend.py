@@ -13,7 +13,6 @@ Author: Esther Graceia Precious A
 Date: 2025-11-04
 """
 
-# ========== IMPORTS ==========
 import os
 import pandas as pd
 import re
@@ -42,18 +41,18 @@ ENTITY_MAP = {
     "TITLE": "JOB",
 }
 
-# ========== LOGGER ==========
+
 logger.remove()
 logger.add(sys.stdout, format="<green>{time:HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{message}</cyan>")
 
-# ========== GLOBAL MODELS ==========
+
 nlp_spacy = None
 nlp_transformer = None
 presidio_analyzer = None
 presidio_anonymizer = None
 
 
-# ========== 1️⃣ LOAD MODELS ==========
+
 def load_spacy_model():
     global nlp_spacy
     try:
@@ -76,9 +75,9 @@ def load_spacy_model():
         ]
 
         ruler.add_patterns(patterns)
-        logger.success("✅ spaCy model + custom EntityRuler loaded successfully")
+        logger.success("spaCy model + custom EntityRuler loaded successfully")
     except Exception as e:
-        logger.error(f"❌ spaCy load error: {e}")
+        logger.error(f"spaCy load error: {e}")
     return nlp_spacy
 
 
@@ -87,9 +86,9 @@ def load_transformer_model():
     try:
         from transformers import pipeline
         nlp_transformer = pipeline("ner", model="dslim/bert-base-NER", aggregation_strategy="simple", framework="pt")
-        logger.success("✅ BERT model loaded successfully")
+        logger.success("BERT model loaded successfully")
     except Exception as e:
-        logger.error(f"❌ BERT load error: {e}")
+        logger.error(f"BERT load error: {e}")
     return nlp_transformer
 
 
@@ -109,9 +108,7 @@ def load_presidio_models():
         registry.add_recognizer(CreditCardRecognizer())
         registry.add_recognizer(IpRecognizer())
 
-        # ===== CUSTOM PATTERNS =====
 
-        # 1️⃣ Job pattern
         job_pattern = Pattern("JobTitle", r"\b(am|as|work(ed)?\s+as|I[' ]?m\s+(a|an))\s+[A-Za-z ]{2,30}\b", 0.6)
         job_recognizer = PatternRecognizer(supported_entity="JOB", patterns=[job_pattern])
 
@@ -127,7 +124,6 @@ def load_presidio_models():
             context=["hobby", "free time", "leisure", "fun", "weekends", "activity", "relaxing", "interest"]
         )
 
-        # 3️⃣ 📍 Address pattern
         address_pattern = Pattern(
             "AddressPattern",
             r"\b\d{1,5}\s+[A-Z][a-zA-Z\s]+(Street|St|Road|Rd|Avenue|Ave|Lane|Ln|Boulevard|Blvd|Drive|Dr|Terrace|Way|Block|Phase|Sector|Main|Cross|Colony)\b(?:[,\sA-Z0-9]*)?",
@@ -153,7 +149,6 @@ def load_presidio_models():
 
     return presidio_analyzer, presidio_anonymizer
 
-# ========== 2️⃣ REGEX DETECTION ==========
 patterns = {
     "NAME": re.compile(r"\b[A-Z][a-z]+(?:\s[A-Z][a-z]+)+\b"),
     "EMAIL": re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}"),
@@ -196,12 +191,8 @@ def detect_with_regex(text):
     return entities
 
 
-# ========== 🧠 ENSEMBLE MASKING ==========
 def ensemble_mask_text(text, threshold=2):
-    """
-    Combines Regex, spaCy, BERT, and Presidio detections using majority voting.
-    Performs safe, non-overlapping masking based on detected spans.
-    """
+
     global nlp_spacy, nlp_transformer, presidio_analyzer, presidio_anonymizer
 
     if nlp_spacy is None:
@@ -266,7 +257,6 @@ def ensemble_mask_text(text, threshold=2):
     return masked_text, all_detections, final_entities
 
 
-# ========== 3️⃣ EVALUATION FUNCTION ==========
 def evaluate_models_on_dataset(
     dataset_path=r"C:\Users\A Esther Graceia\Desktop\main_pii_research\data\pii_dataset.csv"
 ):
@@ -290,20 +280,16 @@ def evaluate_models_on_dataset(
         text = str(row["text"])
         ground_truth = {e: str(row.get(e.lower(), "")).strip() != "" for e in entity_types}
 
-        # Regex
         regex_detected = detect_with_regex(text)
         for e in entity_types:
             model_results["Regex"][e].append((ground_truth[e], e in regex_detected))
 
-        # spaCy
         if spacy_model:
             doc = spacy_model(text)
             spacy_entities = [ENTITY_MAP.get(ent.label_.upper(), ent.label_.upper()) for ent in doc.ents]
             for e in entity_types:
                 model_results["spaCy"][e].append((ground_truth[e], e in spacy_entities))
 
-        # BERT
-        # ====== BERT + Regex Hybrid ======
         if transformer_model:
             bert_entities = [
                 ENTITY_MAP.get(ent["entity_group"].upper(), ent["entity_group"].upper())
@@ -319,14 +305,12 @@ def evaluate_models_on_dataset(
                 model_results["BERT"][e].append((ground_truth[e], e in bert_entities))
 
 
-        # Presidio
         if analyzer:
             presidio_entities = [ENTITY_MAP.get(r.entity_type.upper(), r.entity_type.upper())
                                  for r in analyzer.analyze(text=text, language="en")]
             for e in entity_types:
                 model_results["Presidio"][e].append((ground_truth[e], e in presidio_entities))
 
-    # ===== COMPUTE METRICS =====
     summary = {}
     for model, entity_dict in model_results.items():
         summary[model] = {}
@@ -345,7 +329,7 @@ def evaluate_models_on_dataset(
                 }
 
 
-    logger.success("✅ Evaluation complete")
+    logger.success("Evaluation complete")
 
     for model, scores in summary.items():
         logger.info(f"\n📘 {model} Results:")
@@ -353,7 +337,6 @@ def evaluate_models_on_dataset(
             logger.info(f"  {entity}: {metrics}")
 
 
-    # ===== SAMPLE MASKING =====
     results_dir = os.path.join(os.path.dirname(dataset_path), "..", "results")
     results_dir = os.path.abspath(results_dir)
 
@@ -366,7 +349,7 @@ def evaluate_models_on_dataset(
         masked = anonymizer.anonymize(text=text, analyzer_results=analyzed)
         masked_examples.append({"original": text, "masked": masked.text})
 
-    logger.info("\n🧩 Sample Masked Outputs:")
+    logger.info("\nSample Masked Outputs:")
     for ex in masked_examples:
         logger.info(f"\nOriginal: {ex['original']}\nMasked:   {ex['masked']}\n")
 
@@ -375,12 +358,11 @@ def evaluate_models_on_dataset(
     )
     masked_path = os.path.join(results_dir, "pii_masked.csv")
     df.to_csv(masked_path, index=False)
-    logger.success(f"💾 Masked dataset saved to {masked_path}")
+    logger.success(f"Masked dataset saved to {masked_path}")
 
     return summary
 
 
-# ========== 4️⃣ FASTAPI APP ==========
 app = FastAPI(title="PII Research Backend", description="Unified PII Detection and Evaluation API")
 app.add_middleware(
     CORSMiddleware,
@@ -407,10 +389,6 @@ def evaluate():
     
 @app.post("/mask_ensemble")
 def mask_with_ensemble(data: dict):
-    """
-    Perform PII masking using ensemble voting logic.
-    Example input: {"text": "My name is John Doe, email john@gmail.com, phone 555-1234"}
-    """
     try:
         text = data.get("text", "")
         if not text:
@@ -418,16 +396,14 @@ def mask_with_ensemble(data: dict):
 
         global nlp_spacy, nlp_transformer, presidio_analyzer, presidio_anonymizer
 
-        # Make sure models are loaded
         if not any([nlp_spacy, nlp_transformer, presidio_analyzer]):
-            logger.warning("⚠️ Models not loaded yet — loading now...")
+            logger.warning("Models not loaded yet — loading now...")
             nlp_spacy = load_spacy_model()
             nlp_transformer = load_transformer_model()
             presidio_analyzer, presidio_anonymizer = load_presidio_models()
 
-        logger.info("🚀 Starting ensemble masking...")
+        logger.info("Starting ensemble masking...")
 
-        # Time each step to confirm execution
         import time
         start = time.time()
 
@@ -437,9 +413,9 @@ def mask_with_ensemble(data: dict):
         )
 
         elapsed = time.time() - start
-        logger.info(f"🧠 Ensemble detected: {final_entities}")
-        logger.success(f"✅ Masked Text: {masked_text}")
-        logger.info(f"⏱️ Processing time: {elapsed:.2f} seconds")
+        logger.info(f"Ensemble detected: {final_entities}")
+        logger.success(f"Masked Text: {masked_text}")
+        logger.info(f"Processing time: {elapsed:.2f} seconds")
 
         return {
             "success": True,
@@ -456,9 +432,6 @@ def mask_with_ensemble(data: dict):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-
-
-# ========== 5️⃣ MAIN EXECUTION ==========
 if __name__ == "__main__":
     logger.info("🚀 Loading models at startup...")
     nlp_spacy = load_spacy_model()
