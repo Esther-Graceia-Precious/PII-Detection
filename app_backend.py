@@ -93,8 +93,6 @@ def load_transformer_model():
     return nlp_transformer
 
 
-from presidio_analyzer import PatternRecognizer, Pattern
-
 def load_presidio_models():
     global presidio_analyzer, presidio_anonymizer
     try:
@@ -117,8 +115,6 @@ def load_presidio_models():
         job_pattern = Pattern("JobTitle", r"\b(am|as|work(ed)?\s+as|I[' ]?m\s+(a|an))\s+[A-Za-z ]{2,30}\b", 0.6)
         job_recognizer = PatternRecognizer(supported_entity="JOB", patterns=[job_pattern])
 
-        # 2️⃣ Hobby pattern
-        # 2️⃣ Enhanced Hobby pattern (context + broader verbs)
         hobby_pattern = Pattern(
             "HobbyExtended",
             r"\b(enjoy|love|like|prefer|adore|am\s+into|passionate\s+about|do|go|play|practice)\s+[a-z]+(ing)?\b",
@@ -199,7 +195,8 @@ def detect_with_regex(text):
             entities.append(key)
     return entities
 
-# ========== 🧠 ENSEMBLE MASKING (Majority Voting) ==========
+
+# ========== 🧠 ENSEMBLE MASKING ==========
 def ensemble_mask_text(text, threshold=2):
     """
     Combines Regex, spaCy, BERT, and Presidio detections using majority voting.
@@ -207,7 +204,6 @@ def ensemble_mask_text(text, threshold=2):
     """
     global nlp_spacy, nlp_transformer, presidio_analyzer, presidio_anonymizer
 
-    # --- Ensure models are loaded ---
     if nlp_spacy is None:
         nlp_spacy = load_spacy_model()
     if nlp_transformer is None:
@@ -215,7 +211,6 @@ def ensemble_mask_text(text, threshold=2):
     if presidio_analyzer is None:
         presidio_analyzer, presidio_anonymizer = load_presidio_models()
 
-    # --- Run all detectors ---
     regex_entities = detect_with_regex(text)
 
     spacy_entities = []
@@ -237,7 +232,6 @@ def ensemble_mask_text(text, threshold=2):
             for r in presidio_analyzer.analyze(text=text, language="en")
         ]
 
-    # --- Voting ---
     all_detections = {
         "Regex": regex_entities,
         "spaCy": spacy_entities,
@@ -252,7 +246,6 @@ def ensemble_mask_text(text, threshold=2):
 
     final_entities = [e for e, v in votes.items() if v >= threshold]
 
-    # --- 🧠 Smart Non-overlapping Masking ---
     spans = []
     for e in final_entities:
         pattern = patterns.get(e)
@@ -261,19 +254,16 @@ def ensemble_mask_text(text, threshold=2):
         for match in re.finditer(pattern, text):
             spans.append((match.start(), match.end(), e))
 
-    # Sort spans by start index descending (mask from right to left)
     spans.sort(key=lambda x: x[0], reverse=True)
 
     masked_text = text
     for start, end, label in spans:
         masked_text = masked_text[:start] + f"[{label}]" + masked_text[end:]
 
-    # Clean spacing after replacements
     masked_text = re.sub(r'\s+\[', ' [', masked_text)
     masked_text = re.sub(r'\[\s+', '[', masked_text)
 
     return masked_text, all_detections, final_entities
-
 
 
 # ========== 3️⃣ EVALUATION FUNCTION ==========
@@ -296,7 +286,7 @@ def evaluate_models_on_dataset(
 
     model_results = {model: {e: [] for e in entity_types} for model in ["Regex", "spaCy", "BERT", "Presidio"]}
 
-    for _, row in df.head(20).iterrows():
+    for _, row in df.iterrows():
         text = str(row["text"])
         ground_truth = {e: str(row.get(e.lower(), "")).strip() != "" for e in entity_types}
 
@@ -361,6 +351,7 @@ def evaluate_models_on_dataset(
         logger.info(f"\n📘 {model} Results:")
         for entity, metrics in scores.items():
             logger.info(f"  {entity}: {metrics}")
+
 
     # ===== SAMPLE MASKING =====
     results_dir = os.path.join(os.path.dirname(dataset_path), "..", "results")
